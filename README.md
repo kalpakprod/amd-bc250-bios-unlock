@@ -9,6 +9,20 @@ Status as of 2026-09-24: the LZMA root cause is fixed and hardware-confirmed,
 the DXE wedge is being bisected down a 5-rung ladder. `v006r-noop` is on the
 chip now; its cold-boot verdict decides the next flash. See [the ladder](#the-ladder).
 
+## Scale of the work
+
+Active since 2026-09-02 (research corpus) / 2026-09-10 (this repo) — day 15
+of daily work and counting:
+
+![project timeline](docs/assets/timeline.svg)
+
+- 60+ firmware images built, 10+ verified flash cycles with independent
+  readback each.
+- 60+ builder/parser/probe scripts, 83-test gate, 350+ research notes,
+  400+ dated lab-log entries.
+- Full chain per image: static preflight → OVMF contract run → flash →
+  readback → cold-boot verdict. Nothing is called done without evidence.
+
 > **Brick warning.** Every image here is experimental. Flashing needs a
 > hardware programmer (CH341/CH347 + SOIC clip), a full verified dump of YOUR
 > chip, and a tested recovery path. No recovery path, no flash. Details:

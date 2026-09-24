@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 260" font-family="ui-monospace,SFMono-Regular,Menlo,monospace">
+  <rect x="0" y="0" width="920" height="260" rx="8" fill="#f5f5f5"/>
+  <text x="60" y="34" font-size="15" font-weight="bold" fill="#2d3142">BC-250 BIOS unlock — September 2026</text>
+  <text x="60" y="54" font-size="11" fill="#2d3142" opacity="0.7">honest scale: 2026-09-02 → 2026-09-24 (22 days)</text>
+  <line x1="60" y1="150" x2="860" y2="150" stroke="#2d3142" stroke-width="1"/>
+  <g font-size="10" fill="#2d3142" opacity="0.7" text-anchor="middle">
+    <line x1="242" y1="145" x2="242" y2="155" stroke="#2d3142" stroke-width="1"/><text x="242" y="172">Sep 7</text>
+    <line x1="496" y1="145" x2="496" y2="155" stroke="#2d3142" stroke-width="1"/><text x="496" y="172">Sep 14</text>
+    <line x1="751" y1="145" x2="751" y2="155" stroke="#2d3142" stroke-width="1"/><text x="751" y="172">Sep 21</text>
+  </g>
+  <g font-size="11" fill="#2d3142">
+    <line x1="60" y1="150" x2="60" y2="196" stroke="#2d3142" stroke-width="1"/>
+    <circle cx="60" cy="150" r="4" fill="#2d3142"/>
+    <text x="60" y="192" text-anchor="middle" font-weight="bold">Sep 2</text>
+    <text x="60" y="207" text-anchor="middle">31G corpus migrated</text>
+    <line x1="351" y1="150" x2="351" y2="104" stroke="#2d3142" stroke-width="1"/>
+    <circle cx="351" cy="150" r="4" fill="#2d3142"/>
+    <text x="351" y="100" text-anchor="middle" font-weight="bold">Sep 10</text>
+    <text x="351" y="85" text-anchor="middle">repo + first audit</text>
+    <line x1="424" y1="150" x2="424" y2="196" stroke="#eb6c36" stroke-width="1"/>
+    <circle cx="424" cy="150" r="6" fill="#eb6c36"/>
+    <text x="424" y="192" text-anchor="middle" font-weight="bold">Sep 12</text>
+    <text x="424" y="207" text-anchor="middle">D10R: early-DXE SMU boots</text>
+    <line x1="824" y1="150" x2="824" y2="104" stroke="#2d3142" stroke-width="1"/>
+    <circle cx="824" cy="150" r="4" fill="#2d3142"/>
+    <text x="824" y="100" text-anchor="middle" font-weight="bold">Sep 23</text>
+    <text x="824" y="85" text-anchor="middle">probe3 rule + route B</text>
+    <line x1="860" y1="150" x2="860" y2="224" stroke="#eb6c36" stroke-width="1"/>
+    <circle cx="860" cy="150" r="6" fill="#eb6c36"/>
+    <text x="860" y="220" text-anchor="end">Sep 24</text>
+    <text x="860" y="235" text-anchor="end" font-weight="bold">v1.0.0 public</text>
+  </g>
+</svg>
