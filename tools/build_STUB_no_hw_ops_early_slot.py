@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Build v006-noop: v005 with the VCN driver's entry stubbed to return 0.
+"""Build BC250_vcn-driver-STUB_no-hw-ops_early-slot.bin (alias v006r-noop): the FIXED image with the VCN driver's entry stubbed to return 0 (zero HW ops).
 
-Diagnostic control (D7 class). v005 loads DXE (two blinks) but stalls before
+Diagnostic control (D7 class). The FIXED build loads DXE (two blinks) but stalls before
 LAN/video. The capsule change vs the booted dump is the only variable, but
 two suspects share it: the driver's VCN writes (fast wedge, D11/D12 class)
-vs the FV insertion surgery itself. v006 separates them: the driver FFS
+vs the FV insertion surgery itself. This STUB build separates them: the driver FFS
 stays at the same offset with the same size, but its code never runs.
 
 Method: patch 3 bytes at the PE entry (file off, computed) to
@@ -13,12 +13,13 @@ the PE CheckSum field (4 bytes). FV layout, offsets, sizes, file count,
 DEPEX section all identical. The capsule is recompressed with the same LZMA
 params and an explicit outsize (G10).
 
-If v006 boots to Linux: the driver's writes wedge DXE -> move the sequence
-to ReadyToBoot (v007). If v006 hangs identically: the insertion surgery is
+If the STUB boots to Linux: the driver's writes wedge DXE -> move the sequence
+to ReadyToBoot (the deferred-readyboot build). If the STUB hangs identically:
+the insertion surgery is
 at fault -> switch to in-slot PE swap (D-technique) or append-at-end (W9).
 
-Base:  candidates/BC250_pre_dump_vcn_own_fv_v005.bin (2fadb173...)
-Output: candidates/BC250_pre_dump_vcn_own_fv_v006_noop.bin (new, never overwrite)
+Base:  candidates/BC250_vcn-driver-FULL_lzma-FIXED_early-slot.bin (2fadb173...)
+Output: candidates/BC250_vcn-driver-STUB_no-hw-ops_early-slot.bin (new, never overwrite)
 """
 from __future__ import annotations
 
@@ -36,13 +37,13 @@ from build_vcn_o3_candidate import (  # noqa: E402
 )
 
 REPO = Path(__file__).resolve().parent.parent
-BASE = Path(os.environ.get("BC250_BASE", "BC250_pre_dump_vcn_own_fv_v005.bin"))
-OUT = Path(os.environ.get("BC250_OUT", "BC250_pre_dump_vcn_own_fv_v006r_noop.bin"))
-MANIFEST = Path(os.environ.get("BC250_MANIFEST", "BC250_pre_dump_vcn_own_fv_v006r_noop.build.json"))
+BASE = Path(os.environ.get("BC250_BASE", "BC250_vcn-driver-FULL_lzma-FIXED_early-slot.bin"))
+OUT = Path(os.environ.get("BC250_OUT", "BC250_vcn-driver-STUB_no-hw-ops_early-slot.bin"))
+MANIFEST = Path(os.environ.get("BC250_MANIFEST", "BC250_vcn-driver-STUB_no-hw-ops_early-slot.build.json"))
 
 BASE_SHA = "2fadb173251eb4a44aa9da371f37207efb0f276f8d509926083bfa5a64c03406"
 VCN_GUID = "B6250780-7E00-4203-900C-23443B1413FE"
-V005_PE_SHA = "ba1cf214178448eabcc353beac59f78f1a404ee65ff5326c5884508c7423e0cb"
+FIXED_PE_SHA = "ba1cf214178448eabcc353beac59f78f1a404ee65ff5326c5884508c7423e0cb"
 STUB = bytes([0x33, 0xC0, 0xC3])  # xor eax,eax; ret
 LZMA_FILTERS = [{"id": lzma.FILTER_LZMA1, "dict_size": 16 * 1024 * 1024,
                  "lc": 3, "lp": 0, "pb": 2, "mode": lzma.MODE_NORMAL,
@@ -154,7 +155,7 @@ def main() -> int:
     stream = clv["raw"] + b"\x00" * clv["raw_pad"] + fvim
     compressed = bytearray(lzma.compress(stream, format=lzma.FORMAT_ALONE,
                                          filters=LZMA_FILTERS))
-    # Explicit outsize (G10): the v005 lesson, applied at build time.
+    # Explicit outsize (G10): the FIXED-build lesson, applied at build time.
     assert bytes(compressed[5:13]) == b"\xff" * 8, "lzma emitted explicit size?"
     compressed[5:13] = len(stream).to_bytes(8, "little")
     assert compressed[0] == 0x5D and bytes(compressed[1:5]) == b"\x00\x00\x00\x01"
@@ -198,22 +199,25 @@ def main() -> int:
     OUT.write_bytes(bytes(out))
     out_sha = sha256(bytes(out))
     MANIFEST.write_text(json.dumps({
+        "plain_name": "BC250_vcn-driver-STUB_no-hw-ops_early-slot.bin",
+        "alias": "v006r-noop",
+        "builder": "tools/build_STUB_no_hw_ops_early_slot.py",
         "variant": "v006r-noop",
-        "what": "v005 + entry stub (xor eax,eax; ret) in the VCN PE32; same FFS "
+        "what": "FULL_lzma-FIXED_early-slot + entry stub (xor eax,eax; ret) in the VCN PE32; same FFS "
                 "offset/size, same FV layout, recompressed capsule, explicit LZMA",
         "question": "does DXE complete with a passive driver in this slot?",
         "base": {"path": str(BASE), "sha256": BASE_SHA},
         "output_sha256": out_sha,
         "entry_patch": {"pe_file_off": hex(foff), "old": "554889", "new": "33c0c3",
                         "checksum_refreshed": True},
-        "pe": {"len": 12288, "v005_sha": V005_PE_SHA, "noop_sha": noop_pe_sha},
+        "pe": {"len": 12288, "fixed_pe_sha": FIXED_PE_SHA, "noop_sha": noop_pe_sha},
         "injected": {"guid": VCN_GUID, "fv_off": hex(off), "size": hex(size)},
         "diff_window": {"first": hex(min(diffs)), "last": hex(max(diffs)),
                         "ndiff": len(diffs)},
         "capsule": {"old_csz": hex(old_csz), "new_csz": hex(new_csz)},
         "hardware_written": False,
     }, indent=2) + "\n")
-    print(f"v006r-noop OUT sha256: {out_sha}")
+    print(f"STUB_early-slot OUT sha256: {out_sha}")
     print(f"noop PE sha256: {noop_pe_sha}")
     print(f"same FFS @{hex(off)} size {hex(size)}; capsule {hex(old_csz)} -> {hex(new_csz)}")
     return 0

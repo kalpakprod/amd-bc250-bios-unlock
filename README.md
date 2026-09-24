@@ -1,7 +1,7 @@
 **English** | [Русский](README.ru.md)
 
 <p align="center">
-  <img src="docs/assets/hero.svg" width="100%" alt="AMD BC-250 BIOS unlock: the VCN encode block, enabled in firmware. Proof panel: LZMA header fixed from unknown size to explicit, ladder v005 DXE boots, v006r on chip.">
+  <img src="docs/assets/hero.svg" width="100%" alt="AMD BC-250 BIOS unlock: the VCN encode block, enabled in firmware. Proof panel: LZMA header fixed from unknown size to explicit, ladder FIXED boots DXE, STUB on chip.">
 </p>
 
 <p align="center">
@@ -29,58 +29,63 @@
 
 ## The ladder
 
-How to read a version name:
+How to read a file name:
 
-- `vNN` is the chronological experiment number (v004 came before v005).
-- `r` means rebuild: same experiment, fixed bytes (v006r replaces v006).
-- The word is the code variant: `noop` does nothing, `active` runs the full
-  sequence, `secure` reads safely only, `rtb` defers to ReadyToBoot.
-- `ownfv-insert` vs `append` is the placement inside the firmware volume.
+- The filename says what is inside: `FULL` runs the whole driver, `STUB`
+  loads but executes zero hardware operations. Then what differs, then where
+  the driver sits.
+- `early-slot` means inserted among the first DXE drivers. `appended-at-end`
+  means added after the last driver of the volume.
+- The old `vNN` tag survives only as an alias in parentheses and inside each
+  `.build.json`. Never as the primary name.
 - A rung is one image plus its verdict. Verdicts: `flashed` (tried on the
   board), `staged` (built and statically verified, never flashed), `on chip`
   (flashed, verdict pending), `hangs` (tried, board stalled).
 
-The rungs (images + manifests in [Releases](https://github.com/kalpakprod/amd-bc250-bios-unlock/releases)):
+The rungs (images + manifests + `.txt` cards in [Releases](https://github.com/kalpakprod/amd-bc250-bios-unlock/releases)):
 
-- **v004** (`98b9c2bd…`), the LZMA-bug specimen: carries the route-B driver
-  with an unknown-size LZMA header. It proves the hang class. Verdict: flashed, hangs after 1 blink.
-- **v005** (`2fadb173…`), the DXE-loader: v004 plus an 8-byte LZMA fix.
+- **BC250_vcn-driver-FULL_lzma-BROKEN_early-slot.bin** (alias v004,
+  `98b9c2bd…`): the full driver with a broken unknown-size LZMA header.
+  It proves the hang class. Verdict: flashed, hangs after 1 blink.
+- **BC250_vcn-driver-FULL_lzma-FIXED_early-slot.bin** (alias v005,
+  `2fadb173…`): the full driver with the 8-byte LZMA fix.
   It proves the board loads DXE again. Verdict: flashed, hangs after 2 blinks, no LAN/video.
-- **v006r-noop** (`6500bea5…`), the control stub: the driver loads but executes
-  zero hardware operations. It separates driver guilt from FV-surgery guilt.
-  Verdict: on chip, cold-boot signs pending.
-- **v007-active** (`9d249397…`), the position test: the full driver appended at
-  the volume end instead of inserted early. It tests dispatch position.
-  Verdict: staged, flashes if v006r boots.
-- **v007r-noop** (`0133a34b…`), the append control: the stub appended at the
-  volume end. It isolates insert-position vs append. Verdict: staged, flashes if v006r hangs.
-- **v008-secure** (`c935e3ec…`), the safe reader: bitmap via Q3 secure read,
-  raw debug reads deleted. It tests whether raw reads were the wedge.
-  Verdict: staged, flashes if v006r boots and v007 hangs.
-- **v009-rtb** (`56df6244…`), the deferred run: the sequence fires on
-  ReadyToBoot, after every driver connects. It tests dispatch timing.
-  Verdict: staged, flashes if v006r boots and v007+v008 hang.
+- **BC250_vcn-driver-STUB_no-hw-ops_early-slot.bin** (alias v006r-noop,
+  `6500bea5…`): the control stub. It separates driver guilt from FV-surgery
+  guilt. Verdict: on chip, cold-boot signs pending.
+- **BC250_vcn-driver-FULL_lzma-FIXED_appended-at-end.bin** (alias v007-active,
+  `9d249397…`): the position test. It tests dispatch position.
+  Verdict: staged, flashes if the STUB boots.
+- **BC250_vcn-driver-STUB_no-hw-ops_appended-at-end.bin** (alias v007r-noop,
+  `0133a34b…`): the append control. It isolates insert-position vs append.
+  Verdict: staged, flashes if the STUB hangs.
+- **BC250_vcn-driver-FULL_safe-reads-only_appended-at-end.bin** (alias
+  v008-secure, `c935e3ec…`): the safe reader. It tests whether raw reads were
+  the wedge. Verdict: staged, flashes if STUB boots and FULL-appended hangs.
+- **BC250_vcn-driver-FULL_deferred-to-readyboot_appended-at-end.bin** (alias
+  v009-rtb, `56df6244…`): the deferred run. It tests dispatch timing.
+  Verdict: staged, flashes if STUB boots and FULL-appended + safe-reads hang.
 
 ## Reproduce in 5 minutes (no hardware)
 
-- Download the v1.0.0 attachments (the v004 image at minimum).
-- Rebuild v005 and v006r byte-identically:
+- Download the latest release attachments (the BROKEN image at minimum).
+- Rebuild the FIXED and STUB images byte-identically:
 
 ```sh
-PYTHONPATH=tools python3 tools/build_v005_lzma_explicit.py
+PYTHONPATH=tools python3 tools/build_FULL_lzma_fixed_early_slot.py
 # -> 2fadb173251eb4a44aa9da371f37207efb0f276f8d509926083bfa5a64c03406
-PYTHONPATH=tools python3 tools/build_v006_noop.py
+PYTHONPATH=tools python3 tools/build_STUB_no_hw_ops_early_slot.py
 # -> 6500bea5b01ea1dcc540939d65faa9cc0ec0f2505a5fcb3e358622803b85bb27
 ```
 
-- Watch v004 FAIL the preflight LZMA gate while v005 passes it:
+- Watch the BROKEN image FAIL the preflight LZMA gate while FIXED passes it:
 
 ```sh
 python3 tools/verify_candidate_preflight.py --help
 ```
 
 - With your own 16 MiB dump (`BC250_BASE`, `BC250_PRE_SHA`), the append
-  builders (v007–v009) run against YOUR base.
+  builders run against YOUR base.
 - Never flash anyone's dump, because NVRAM and board data differ.
 
 ## Scale of the work
@@ -120,14 +125,14 @@ python3 tools/verify_candidate_preflight.py --help
 - **LZMA unknown-size hang.** Our capsule recompressor (Python `lzma`,
   `FORMAT_ALONE`) wrote header size `0xFFFFFFFFFFFFFFFF`. The board's PEI
   decoder rejects unknown size, so the DXE volume never loads. Symptom: first
-  blink, then nothing, before any driver runs. Fixed with 8 bytes in v005;
+  blink, then nothing, before any driver runs. Fixed with 8 bytes in the FIXED build;
   full story: [docs/05-lzma-lesson.md](docs/05-lzma-lesson.md).
 - **DXE wedge ladder.** With DXE loading, the board stalls before video and
   LAN. Suspects in test order: driver code vs FV surgery, then position, then
   raw reads, then timing. Each rung changes exactly one variable.
 - **Dispatch position.** Our first slot was the FIRST TRUE-pool driver, ahead
   of PCI, video, LAN, and all AMD chipset DXE. `DEPEX TRUE` changes nothing
-  vs no DEPEX (PI spec); the identical v003e/v004 hangs proved it. Map:
+  vs no DEPEX (PI spec); the identical SUPERSEDED-v003e/BROKEN hangs proved it. Map:
   [docs/02-uefi-layout.md](docs/02-uefi-layout.md).
 
 ## Layout
@@ -139,10 +144,11 @@ python3 tools/verify_candidate_preflight.py --help
   ReadyToBoot) plus the EDK2 build recipe.
 - `docs/` holds the flash protocol, the UEFI layout, the driver write set, the
   VCN check method, and the LZMA lesson.
+- `CHANGELOG.md` holds every release and the versioning rules.
 
 ## We need help with
 
-- **The DXE wedge.** v005 stalls before video and LAN. The write-set vs
+- **The DXE wedge.** The FIXED build stalls before video and LAN. The write-set vs
   ownership analysis is in `docs/03-route-b-driver.md`. A second pair of eyes
   on the SMU-concurrency mechanism (or a UART mod for POST codes) unblocks us.
 - **Linux-side VCN.** When a rung boots, `tools/postflash_vcn_check.py` judges

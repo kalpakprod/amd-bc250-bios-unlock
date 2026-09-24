@@ -32,7 +32,7 @@ Goal: VCN clocks on, power acked, enable block set — the encode block alive.
   of the clock-plan/SMU set wedges the board even after full init (proven by
   probe3). Everything else goes through secure `0x2A`.
 - **The SMU is a live agent.** Targets are its own SRAM/state; our writes
-  race its boot sequencing. Later dispatch = less race (the v007→v009 logic).
+  race its boot sequencing. Later dispatch = less race (the append-then-defer logic).
 - **Fail fast, fail loud.** Every poll is timeout-bounded (mailbox 5 s,
   registers 125 iters); the driver can stall a boot for seconds, never minutes.
 - Build: EDK2 `RELEASE_GCC X64 -Werror`, 12288-byte PE, FFS
@@ -42,4 +42,4 @@ Goal: VCN clocks on, power acked, enable block set — the encode block alive.
 
 Which exact write wedges pre-video DXE? Risk ranking (inference, not yet
 hardware-bisected): gate modes > PLL trigger > power steps > enable block >
-bitmap. The v006r verdict picks the next experiment.
+bitmap. The STUB early-slot verdict picks the next experiment.

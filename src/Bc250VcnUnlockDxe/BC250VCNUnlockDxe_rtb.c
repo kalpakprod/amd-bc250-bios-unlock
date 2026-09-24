@@ -1,11 +1,11 @@
-/** @file BC250-VCN-Unlock DXE driver — v009-rtb (route B + ReadyToBoot).
+/** @file BC250-VCN-Unlock DXE driver — deferred-readyboot build, alias v009-rtb (route B + ReadyToBoot).
 
   Variant of BC250VCNUnlockDxe_secure.c. Exact diff vs that baseline: the
   entry point only REGISTERS a one-shot ReadyToBoot callback and returns;
   VcnEnableSequence() runs inside the callback, after BDS has connected
   every driver (PCI/video/LAN up, SMU boot sequencing done). This is the
   D9R-proven timing for SMU unlock work; route-B-at-ReadyToBoot itself is
-  unproven and is exactly what v009 tests. Entry does zero hardware
+  unproven and is exactly what the readyboot build tests. Entry does zero hardware
   touches, so dispatch position no longer matters for safety.
 
   Variant of BC250VCNUnlockDxe.c (route B). Exact diff vs that baseline:

@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
-"""Build v005: v004 bytes with ONLY the LZMA-alone outsize field fixed.
+"""Build BC250_vcn-driver-FULL_lzma-FIXED_early-slot.bin (alias v005): the BROKEN image with ONLY the LZMA-alone outsize field fixed (8 bytes).
 
-Root cause of the v003e/v004 first-blink hang (byte-proven 2026-09-24):
+Root cause of the first-blink hang of the SUPERSEDED-v003e and BROKEN builds (byte-proven 2026-09-24):
 the capsule LZMA-alone header carried an UNKNOWN decoded size
 (0xFFFFFFFFFFFFFFFF) because CPython's lzma.compress(FORMAT_ALONE) emits
 unknown size. The board's PEI capsule decoder rejects unknown-size streams
 (hardware-proven on this platform by the D5-D7 -> D8 campaign: restoring the
 explicit decoded length made the same candidate boot). The DXE volume never
 decompresses, so the hang happens BEFORE any DXE driver runs — which is why
-v003e (no DEPEX) and v004 (DEPEX TRUE) show the identical symptom.
+The SUPERSEDED-v003e (no DEPEX) and BROKEN (DEPEX TRUE) builds show the identical symptom.
 
-v005 changes exactly 8 bytes vs v004: the LZMA-alone uncompressed-size field
+The FIXED build changes exactly 8 bytes vs BROKEN: the LZMA-alone uncompressed-size field
 (header bytes 5..12) becomes the explicit decompressed-stream length. No
 length field, checksum, FV byte, or driver byte changes.
 
-Base:  candidates/BC250_pre_dump_vcn_own_fv_v004.bin
+Base:  candidates/BC250_vcn-driver-FULL_lzma-BROKEN_early-slot.bin
         (sha 98b9c2bd0bd0324f5642d76b105fb7a1ba851ec16c5c89046b0bf585a5765ab8)
-Output: candidates/BC250_pre_dump_vcn_own_fv_v005.bin (new, never overwrite)
+Output: candidates/BC250_vcn-driver-FULL_lzma-FIXED_early-slot.bin (new, never overwrite)
 """
 from __future__ import annotations
 
@@ -32,9 +32,9 @@ from build_vcn_o3_candidate import (  # noqa: E402
 )
 
 REPO = Path(__file__).resolve().parent.parent
-BASE = Path(os.environ.get("BC250_BASE", "BC250_pre_dump_vcn_own_fv_v004.bin"))
-OUT = Path(os.environ.get("BC250_OUT", "BC250_pre_dump_vcn_own_fv_v005.bin"))
-MANIFEST = Path(os.environ.get("BC250_MANIFEST", "BC250_pre_dump_vcn_own_fv_v005.build.json"))
+BASE = Path(os.environ.get("BC250_BASE", "BC250_vcn-driver-FULL_lzma-BROKEN_early-slot.bin"))
+OUT = Path(os.environ.get("BC250_OUT", "BC250_vcn-driver-FULL_lzma-FIXED_early-slot.bin"))
+MANIFEST = Path(os.environ.get("BC250_MANIFEST", "BC250_vcn-driver-FULL_lzma-FIXED_early-slot.build.json"))
 
 BASE_SHA = "98b9c2bd0bd0324f5642d76b105fb7a1ba851ec16c5c89046b0bf585a5765ab8"
 UNKNOWN_SIZE = b"\xff" * 8
@@ -90,22 +90,25 @@ def main() -> int:
     OUT.write_bytes(bytes(out))
     out_sha = sha256(bytes(out))
     MANIFEST.write_text(json.dumps({
+        "plain_name": "BC250_vcn-driver-FULL_lzma-FIXED_early-slot.bin",
+        "alias": "v005",
+        "builder": "tools/build_FULL_lzma_fixed_early_slot.py",
         "variant": "v005",
-        "what": "v004 + LZMA-alone explicit decoded size (8-byte patch); "
+        "what": "FULL_lzma-BROKEN_early-slot + LZMA-alone explicit decoded size (8-byte patch); "
                 "driver, placement, FV, capsule lengths unchanged",
-        "fix_vs_v004": "LZMA-alone header bytes 5..12: ffffffff... -> explicit "
+        "fix_vs_BROKEN": "LZMA-alone header bytes 5..12: ffffffff... -> explicit "
                        f"{explicit.hex()} ({len(stream)} = 0x{len(stream):x}); "
                        "repeats the hardware-proven D8 repair of the D5-D7 defect",
         "base": {"path": str(BASE), "sha256": BASE_SHA},
         "output_sha256": out_sha,
         "lzma_header_off": hex(lz_off),
         "explicit_size": len(stream),
-        "diff_vs_v004": {"n": 8, "first": hex(diffs[0]), "last": hex(diffs[-1])},
+        "diff_vs_BROKEN": {"n": 8, "first": hex(diffs[0]), "last": hex(diffs[-1])},
         "hardware_written": False,
     }, indent=2) + "\n")
-    print(f"v005 OUT sha256: {out_sha}")
+    print(f"FIXED_early-slot OUT sha256: {out_sha}")
     print(f"LZMA header @{hex(lz_off)}: unknown -> explicit {len(stream)} ({hex(len(stream))})")
-    print("diff vs v004: exactly 8 bytes, stream/FV/driver identical")
+    print("diff vs BROKEN: exactly 8 bytes, stream/FV/driver identical")
     return 0
 
 

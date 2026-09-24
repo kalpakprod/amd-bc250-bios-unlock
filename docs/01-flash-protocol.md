@@ -40,7 +40,7 @@ cmp post.bin IMAGE.bin && sha256sum post.bin
 
 - Double read: a flaky clip corrupts silently; two agreeing reads don't.
 - Expectation check: the board writes NVRAM on boot attempts (we measured
-  62 bytes after v005 hangs). A changed chip is information, not an error —
+  62 bytes after the FIXED build hangs). A changed chip is information, not an error —
   but it needs a conscious decision.
 - Slow write: 15 MHz reads fine; writes at 15 MHz flaked, 1.875M never has.
 - Readback, not trust: `flashrom -w` already verifies, and we still re-read
