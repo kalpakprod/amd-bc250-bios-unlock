@@ -1,0 +1,1 @@
+quiet nowatchdog splash rw rootflags=subvol=/@/.snapshots/137/snapshot root=UUID=14fe5cec-acf0-4986-8103-251a5706bbac video=DP-1:1920x1080@60 amdgpu.sg_display=-1 ttm.pages_limit=3959290 systemd.zram=0 loglevel=0 mitigations=off acpi_enforce_resources=lax amdgpu.bc250_vcn_mode=0
