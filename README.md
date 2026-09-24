@@ -1,4 +1,8 @@
+**English** | [Русский](README.ru.md)
+
 # AMD BC-250 BIOS unlock
+
+[![release](https://img.shields.io/github/v/release/kalpakprod/amd-bc250-bios-unlock)](https://github.com/kalpakprod/amd-bc250-bios-unlock/releases) [![license](https://img.shields.io/github/license/kalpakprod/amd-bc250-bios-unlock)](LICENSE) [![board](https://img.shields.io/badge/board-ASRock_BC--250-blue)](https://github.com/kalpakprod/amd-bc250-bios-unlock)
 
 Hacking the ASRock BC-250 BIOS toward one goal: **the VCN encode block
 enabled in firmware**. UEFI/DXE patches, a from-scratch DXE driver,
