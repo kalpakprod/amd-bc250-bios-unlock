@@ -17,7 +17,8 @@
   a 10-gate static preflight, and a safe EEPROM flash protocol.
 - Every claim below is verified on real hardware with a programmer.
 - Status on 2026-09-24: the LZMA root cause is fixed and hardware-confirmed.
-- The remaining DXE wedge is bisected down a 5-rung ladder, one variable at a time.
+- Both STUB controls boot; both FULL images hang. Surgery and position are
+  closed: the wedge is in the driver's operations. Safe-reads is next.
 
 ## Flashing can brick your board
 
@@ -52,19 +53,19 @@ The rungs (images + manifests + `.txt` cards in [Releases](https://github.com/ka
   It proves the board loads DXE again. Verdict: flashed, hangs after 2 blinks, no LAN/video.
 - **BC250_vcn-driver-STUB_no-hw-ops_early-slot.bin** (alias v006r-noop,
   `6500bea5…`): the control stub. It separates driver guilt from FV-surgery
-  guilt. Verdict: on chip, cold-boot signs pending.
+  guilt. Verdict: flashed, BOOTS to Linux (amdgpu up).
 - **BC250_vcn-driver-FULL_lzma-FIXED_appended-at-end.bin** (alias v007-active,
-  `9d249397…`): the position test. It tests dispatch position.
-  Verdict: staged, flashes if the STUB boots.
+  `9d249397…`): the position test. It proved position is not the cause.
+  Verdict: flashed, hangs after 1 blink (pre-dispatch; FV statically valid).
 - **BC250_vcn-driver-STUB_no-hw-ops_appended-at-end.bin** (alias v007r-noop,
-  `0133a34b…`): the append control. It isolates insert-position vs append.
-  Verdict: staged, flashes if the STUB hangs.
+  `0133a34b…`): the append control. It proved the append structure is fine.
+  Verdict: flashed, BOOTS (H19 wins).
 - **BC250_vcn-driver-FULL_safe-reads-only_appended-at-end.bin** (alias
   v008-secure, `c935e3ec…`): the safe reader. It tests whether raw reads were
-  the wedge. Verdict: staged, flashes if STUB boots and FULL-appended hangs.
+  the wedge. Verdict: staged, NEXT.
 - **BC250_vcn-driver-FULL_deferred-to-readyboot_appended-at-end.bin** (alias
   v009-rtb, `56df6244…`): the deferred run. It tests dispatch timing.
-  Verdict: staged, flashes if STUB boots and FULL-appended + safe-reads hang.
+  Verdict: staged, flashes if safe-reads hangs.
 
 ## Reproduce in 5 minutes (no hardware)
 
@@ -143,7 +144,8 @@ python3 tools/verify_candidate_preflight.py --help
 - `src/Bc250VcnUnlockDxe/` holds the DXE driver sources (route-B, secure,
   ReadyToBoot) plus the EDK2 build recipe.
 - `docs/` holds the flash protocol, the UEFI layout, the driver write set, the
-  VCN check method, and the LZMA lesson.
+  VCN check method, the LZMA lesson, and the Linux kernels guide.
+- `kernels/` holds the bore-vcn + bc250 builds: modes, patch delta, installer.
 - `CHANGELOG.md` holds every release and the versioning rules.
 
 ## We need help with

@@ -15,6 +15,17 @@ Every change to this repo ships as a versioned release. Versions follow
 - Releases are immutable: a published release's assets never change. A rename
   or a byte change always becomes a NEW version that supersedes the old one.
 
+## [2.1.0] — 2026-09-24
+
+- Added: Linux kernels (bore-vcn 7.2.6-1.3 + bc250 7.2.6-1.206): pacman
+  packages, raw vmlinuz+initramfs, 3 mode cmdlines, local patch delta,
+  installer scripts, `docs/06-linux-kernels.md`.
+- Changed: ladder verdicts (STUB-early BOOTS, FULL-appended 1-blink hang,
+  STUB-appended BOOTS, H19 wins). `.txt` cards and `.build.json` metadata
+  refreshed; image bytes unchanged.
+- Note: bore-vcn 1.3 PKGBUILD + `bc250_vcn_mode` patch source missing
+  (stated in `kernels/README.md`).
+
 ## [2.0.0] — 2026-09-24
 
 BREAKING: every ladder filename now says what is inside. Image bytes and
