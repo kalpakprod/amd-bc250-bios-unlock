@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
-"""Build v009-rtb-append: ReadyToBoot-deferred driver APPENDED at the FV end.
+"""Build BC250_vcn-driver-FULL_deferred-to-readyboot_appended-at-end.bin (alias v009-rtb): full driver firing on ReadyToBoot, APPENDED at the FV end.
 
-Fourth rung of the v005-hang ladder (all staged, nothing flashed):
-  v006-noop @0x12940        code vs surgery discriminator (awaiting flash)
-  v007-active appended      position change, identical code
-  v008-secure appended      same position, secure-reads code
-  v009-rtb appended         THIS: same position/code, ReadyToBoot timing
+Fourth rung of the FIXED-hang ladder (all staged, nothing flashed):
+  STUB_early-slot @0x12940   code vs surgery discriminator (on chip, verdict pending)
+  FULL_appended             position change, identical code
+  safe-reads_appended       same position, secure-reads code
+  readyboot_appended        THIS: same position/code, ReadyToBoot timing
 
-The v009 driver (BC250VCNUnlockDxe_rtb.c) is the secure-reads code with the
+The deferred-readyboot driver (BC250VCNUnlockDxe_rtb.c) is the secure-reads code with the
 entry point reduced to a one-shot ReadyToBoot registration; the sequence
 runs after BDS connects every driver (D9R-proven timing class). Entry does
 zero hardware touches. Same FFS size (0x3022), same GUID, DEPEX TRUE.
 
-Flash v009 IF v006 boots AND v007-active AND v008 both hang: that outcome
+Flash the readyboot build IF the STUB boots AND FULL-appended + safe-reads both hang: that outcome
 isolates dispatch-time writes as the wedge (position fixed, reads fixed,
 only timing changes).
 
 Blob: candidates/vcn-unlock-driver-v000-DRAFT/bin/Bc250VcnUnlockDxe-rtb.ffs
 Base: evidence/.../pre-v003c-read-a.bin (64973ba364..., the booted dump)
-Output: candidates/BC250_pre_dump_vcn_rtb_append_v009.bin (new)
+Output: candidates/BC250_vcn-driver-FULL_deferred-to-readyboot_appended-at-end.bin (new)
 """
 from __future__ import annotations
 
@@ -38,8 +38,8 @@ from build_vcn_o3_candidate import (  # noqa: E402
 REPO = Path(__file__).resolve().parent.parent
 PRE = Path(os.environ.get("BC250_BASE", "mydump-16m.bin"))
 BLOB = Path(os.environ.get("BC250_BLOB", "Bc250VcnUnlockDxe-rtb.ffs"))
-OUT = Path(os.environ.get("BC250_OUT", "BC250_pre_dump_vcn_rtb_append_v009.bin"))
-MANIFEST = Path(os.environ.get("BC250_MANIFEST", "BC250_pre_dump_vcn_rtb_append_v009.build.json"))
+OUT = Path(os.environ.get("BC250_OUT", "BC250_vcn-driver-FULL_deferred-to-readyboot_appended-at-end.bin"))
+MANIFEST = Path(os.environ.get("BC250_MANIFEST", "BC250_vcn-driver-FULL_deferred-to-readyboot_appended-at-end.build.json"))
 
 PRE_SHA = os.environ.get("BC250_PRE_SHA", "64973ba364ae4417de10bd905d2cf8bad165af3b544d175b3cc315f0e28d621a")
 BLOB_SHA = "9393054c63f44fa079455d2908a3132ec1aa725e1ee602e8284806e47343dc26"
@@ -145,6 +145,9 @@ def main() -> int:
     OUT.write_bytes(bytes(out))
     out_sha = sha256(bytes(out))
     MANIFEST.write_text(json.dumps({
+        "plain_name": "BC250_vcn-driver-FULL_deferred-to-readyboot_appended-at-end.bin",
+        "alias": "v009-rtb",
+        "builder": "tools/build_FULL_deferred_readyboot_appended_at_end.py",
         "variant": "v009-rtb-append",
         "what": "booted pre-dump + ReadyToBoot VCN driver APPENDED at FV end; "
                 "all 193 base files at identical offsets; explicit LZMA",
@@ -161,7 +164,7 @@ def main() -> int:
         "capsule": {"old_csz": hex(old_csz), "new_csz": hex(new_csz)},
         "hardware_written": False,
     }, indent=2) + "\n")
-    print(f"v009-rtb-append OUT sha256: {out_sha}")
+    print(f"readyboot_appended-at-end OUT sha256: {out_sha}")
     print(f"append @{hex(pos)} size {hex(len(blob))}; "
           f"FV {hex(flen)} -> {hex(new_flen)}")
     return 0
