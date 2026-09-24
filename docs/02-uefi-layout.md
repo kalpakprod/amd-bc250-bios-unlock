@@ -31,9 +31,9 @@ validate against YOUR dump before trusting them.
 - Our insert slot is the **first TRUE-pool driver**: it runs before PCI,
   video, LAN, and all AMD chipset DXE.
 - `DEPEX TRUE` is a scheduling no-op vs no-DEPEX (PI spec: missing DEPEX
-  means TRUE). Our v003e→v004 "fix" changed nothing — the identical hang on
-  both proved it. Appended rungs (v007+) run last instead; v009 defers to
-  ReadyToBoot.
+  means TRUE). Our SUPERSEDED-v003e→BROKEN "fix" changed nothing — the identical hang on
+  both proved it. Appended rungs run last instead; the readyboot build
+  defers to ReadyToBoot.
 - FV surgery ranking by blast radius: in-slot PE swap (offsets stable) <
   append-at-end (base offsets stable) < insert-before-Bds (shifts ~180 files).
   Our ladder walks this ranking deliberately.

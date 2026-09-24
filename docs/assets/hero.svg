@@ -16,9 +16,9 @@
     <text x="788" y="150" font-size="19" fill="#eb6c36" font-weight="bold" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">--&gt; 5d&#8230;00441010</text>
     <line x1="788" y1="172" x2="1108" y2="172" stroke="#f5f5f5" opacity="0.25" stroke-width="1"/>
     <g font-size="18" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">
-      <text x="788" y="202" fill="#7ee787">v005 2fadb173</text>
-      <text x="788" y="230" fill="#f5f5f5">v006r 6500bea5</text>
-      <text x="788" y="258" fill="#f5f5f5" opacity="0.7">v007+ staged</text>
+      <text x="788" y="202" fill="#7ee787">FIXED 2fadb173</text>
+      <text x="788" y="230" fill="#f5f5f5">STUB 6500bea5</text>
+      <text x="788" y="258" fill="#f5f5f5" opacity="0.7">4 staged</text>
     </g>
     <g font-size="15" font-family="-apple-system,Inter,Segoe UI,Roboto,Arial,sans-serif" font-weight="bold">
       <text x="788" y="296" fill="#7ee787">DXE BOOTS</text>

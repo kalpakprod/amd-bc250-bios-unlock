@@ -42,4 +42,4 @@ Goal: VCN clocks on, power acked, enable block set — the encode block alive.
 
 Which exact write wedges pre-video DXE? Risk ranking (inference, not yet
 hardware-bisected): gate modes > PLL trigger > power steps > enable block >
-bitmap. The v006r verdict picks the next experiment.
+bitmap. The STUB early-slot verdict picks the next experiment.
