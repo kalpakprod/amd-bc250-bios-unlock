@@ -1,4 +1,4 @@
-/** @file BC250-VCN-Unlock DXE driver — v008-secure (route B, secure reads only).
+/** @file BC250-VCN-Unlock DXE driver — safe-reads build, alias v008-secure (route B, secure reads only).
 
   Variant of BC250VCNUnlockDxe.c (route B). Exact diff vs that baseline:
   1. The domain-bitmap reads (step 0 and the step-0a re-verify) use the Q3

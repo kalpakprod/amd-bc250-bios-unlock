@@ -1,8 +1,8 @@
 # Bc250VcnUnlockDxe sources
 
 - `BC250VCNUnlockDxe.c` — route-B baseline.
-- `BC250VCNUnlockDxe_secure.c` — secure-reads-only variant (v008).
-- `BC250VCNUnlockDxe_rtb.c` — ReadyToBoot-deferred variant (v009).
+- `BC250VCNUnlockDxe_secure.c` — secure-reads-only variant (alias v008-secure).
+- `BC250VCNUnlockDxe_rtb.c` — ReadyToBoot-deferred variant (alias v009-rtb).
 - `.h` / `.inf` — module header and EDK2 descriptor (`DEPEX TRUE`).
 
 Build (EDK2 `RELEASE_GCC`, X64, `-Werror` clean; result must be 12288 bytes):
