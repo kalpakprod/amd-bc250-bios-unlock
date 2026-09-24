@@ -10,128 +10,155 @@
   <a href="https://github.com/kalpakprod/amd-bc250-bios-unlock"><img src="https://img.shields.io/badge/board-ASRock_BC--250-blue" alt="board"></a>
 </p>
 
-Hacking the ASRock BC-250 BIOS toward one goal: **the VCN encode block
-enabled in firmware**. UEFI/DXE patches, a from-scratch DXE driver,
-reproducible image builders, a strict pre-flight gate, and a safe EEPROM
-flash protocol — all verified on real hardware with a programmer.
+## What this is
 
-Status as of 2026-09-24: the LZMA root cause is fixed and hardware-confirmed,
-the DXE wedge is being bisected down a 5-rung ladder. `v006r-noop` is on the
-chip now; its cold-boot verdict decides the next flash.
+- This project enables the VCN encode block in the ASRock BC-250 BIOS.
+- Method: UEFI/DXE patches, a custom DXE driver, reproducible image builders,
+  a 10-gate static preflight, and a safe EEPROM flash protocol.
+- Every claim below is verified on real hardware with a programmer.
+- Status on 2026-09-24: the LZMA root cause is fixed and hardware-confirmed.
+- The remaining DXE wedge is bisected down a 5-rung ladder, one variable at a time.
 
-> **Brick warning.** Every image here is experimental. Flashing needs a
-> hardware programmer (CH341/CH347 + SOIC clip), a full verified dump of YOUR
-> chip, and a tested recovery path. No recovery path, no flash. Details:
-> [docs/01-flash-protocol.md](docs/01-flash-protocol.md).
+## Flashing can brick your board
+
+- Every image here is experimental.
+- Flashing needs a hardware programmer (CH341/CH347 + SOIC clip).
+- Flashing needs a full verified dump of YOUR chip and a tested recovery path.
+- Without a recovery path, do not flash.
+- Full procedure: [docs/01-flash-protocol.md](docs/01-flash-protocol.md).
 
 ## The ladder
 
-| image | sha256 (short) | what | verdict |
-|---|---|---|---|
-| v004 | `98b9c2bd…` | route-B driver, LZMA bug | flashed, 1 blink (specimen) |
-| v005 | `2fadb173…` | v004 + explicit LZMA size | flashed, 2 blinks, no LAN/video |
-| v006r-noop | `6500bea5…` | v005 + stubbed entry (control) | **on chip, verdict pending** |
-| v007-active | `9d249397…` | same driver, appended at FV end | staged |
-| v007r-noop | `0133a34b…` | noop, appended | staged (if v006r hangs) |
-| v008-secure | `c935e3ec…` | secure-reads-only driver | staged (if v007 hangs) |
-| v009-rtb | `56df6244…` | ReadyToBoot-deferred sequence | staged (if v007+v008 hang) |
+How to read a version name:
 
-Images live in [Releases](https://github.com/kalpakprod/amd-bc250-bios-unlock/releases)
-as attachments (never in git). Every image: full 16 MiB, built from one
-verified dump, published with its `.build.json` manifest and SHA256SUMS.
+- `vNN` is the chronological experiment number (v004 came before v005).
+- `r` means rebuild: same experiment, fixed bytes (v006r replaces v006).
+- The word is the code variant: `noop` does nothing, `active` runs the full
+  sequence, `secure` reads safely only, `rtb` defers to ReadyToBoot.
+- `ownfv-insert` vs `append` is the placement inside the firmware volume.
+- A rung is one image plus its verdict. Verdicts: `flashed` (tried on the
+  board), `staged` (built and statically verified, never flashed), `on chip`
+  (flashed, verdict pending), `hangs` (tried, board stalled).
+
+The rungs (images + manifests in [Releases](https://github.com/kalpakprod/amd-bc250-bios-unlock/releases)):
+
+- **v004** (`98b9c2bd…`), the LZMA-bug specimen: carries the route-B driver
+  with an unknown-size LZMA header. It proves the hang class. Verdict: flashed, hangs after 1 blink.
+- **v005** (`2fadb173…`), the DXE-loader: v004 plus an 8-byte LZMA fix.
+  It proves the board loads DXE again. Verdict: flashed, hangs after 2 blinks, no LAN/video.
+- **v006r-noop** (`6500bea5…`), the control stub: the driver loads but executes
+  zero hardware operations. It separates driver guilt from FV-surgery guilt.
+  Verdict: on chip, cold-boot signs pending.
+- **v007-active** (`9d249397…`), the position test: the full driver appended at
+  the volume end instead of inserted early. It tests dispatch position.
+  Verdict: staged, flashes if v006r boots.
+- **v007r-noop** (`0133a34b…`), the append control: the stub appended at the
+  volume end. It isolates insert-position vs append. Verdict: staged, flashes if v006r hangs.
+- **v008-secure** (`c935e3ec…`), the safe reader: bitmap via Q3 secure read,
+  raw debug reads deleted. It tests whether raw reads were the wedge.
+  Verdict: staged, flashes if v006r boots and v007 hangs.
+- **v009-rtb** (`56df6244…`), the deferred run: the sequence fires on
+  ReadyToBoot, after every driver connects. It tests dispatch timing.
+  Verdict: staged, flashes if v006r boots and v007+v008 hang.
 
 ## Reproduce in 5 minutes (no hardware)
 
+- Download the v1.0.0 attachments (the v004 image at minimum).
+- Rebuild v005 and v006r byte-identically:
+
 ```sh
-# 1. Grab v1.0.0 attachments (v004 image at least)
-# 2. Rebuild v005 and v006r byte-identically:
 PYTHONPATH=tools python3 tools/build_v005_lzma_explicit.py
 # -> 2fadb173251eb4a44aa9da371f37207efb0f276f8d509926083bfa5a64c03406
 PYTHONPATH=tools python3 tools/build_v006_noop.py
 # -> 6500bea5b01ea1dcc540939d65faa9cc0ec0f2505a5fcb3e358622803b85bb27
-# 3. Watch v004 FAIL the preflight's LZMA gate and v005 pass it:
+```
+
+- Watch v004 FAIL the preflight LZMA gate while v005 passes it:
+
+```sh
 python3 tools/verify_candidate_preflight.py --help
 ```
 
-With your own 16 MiB dump (`BC250_BASE`, `BC250_PRE_SHA`), the append
-builders (v007–v009) run against YOUR base. Never flash anyone's dump —
-NVRAM and board data differ.
+- With your own 16 MiB dump (`BC250_BASE`, `BC250_PRE_SHA`), the append
+  builders (v007–v009) run against YOUR base.
+- Never flash anyone's dump, because NVRAM and board data differ.
 
 ## Scale of the work
 
-Active since 2026-09-02 (first message) — day 23 of daily work and counting:
+- Active since 2026-09-02 (first message): day 23 of daily work and counting.
 
 ![project timeline](docs/assets/timeline.svg)
 
-- 60+ firmware images built, 10+ verified flash cycles with independent
-  readback each.
-- 60+ builder/parser/probe scripts, 83-test gate, 350+ research notes,
-  400+ dated lab-log entries.
-- Full chain per image: static preflight → OVMF contract run → flash →
-  readback → cold-boot verdict. Nothing is called done without evidence.
+- Built: 60+ firmware images, 10+ verified flash cycles, each with an
+  independent readback.
+- Written: 60+ builder/parser/probe scripts, an 83-test gate, 350+ research
+  notes, 400+ dated lab-log entries.
+- Chain per image: static preflight, OVMF contract run, flash, readback,
+  cold-boot verdict. Nothing is called done without evidence.
 
 ## Where the ideas came from
 
-- **The board itself.** The pre-dump already carries community DXE drivers
-  (`MeiMeiDXEv3_SMU_Core_Unlock` + `SMU_Patch`) in the same size class as ours.
-  In-UEFI unlock drivers on this exact board are proven ground.
-- **D-series SMU campaigns** (d5–d19, our earlier work): proved an early-DXE
-  SMU touch boots (D10R), proved the LZMA unknown-size header kills the boot
-  (D5–D7 → D8 fix), and mapped which gasket writes wedge the SMU (D12–D19).
-- **USB/Linux probes** (probe1–probe4): probe3 proved a raw `0xB8/0xBC` read
-  of the clock-plan/SMU set wedges the board even after full init — the rule
-  our driver obeys (mailbox addresses only, everything else via Q3 `0x2A`).
-- **The community:** [bc250-collective/amd_smu_reverse_engineering](https://github.com/bc250-collective/amd_smu_reverse_engineering)
-  (SMU RE bible), [thelamer/bc250-vcn](https://github.com/thelamer/bc250-vcn),
+- The board itself ships community DXE drivers (`MeiMeiDXEv3_SMU_Core_Unlock`,
+  `SMU_Patch`) in our size class. In-UEFI unlock drivers on this exact board
+  are proven ground.
+- The D-series SMU campaigns (d5–d19) proved three facts: an early-DXE SMU
+  touch boots (D10R), an unknown-size LZMA header kills the boot (D5–D7, fixed
+  in D8), and single gasket writes wedge the SMU (D12–D19).
+- The USB/Linux probes (probe1–probe4) proved one rule: a raw `0xB8/0xBC` read
+  of the clock-plan/SMU set wedges the board even after full init. Our driver
+  therefore touches raw only mailbox addresses and reads everything else via
+  Q3 `0x2A`.
+- The community mapped the territory first:
+  [bc250-collective/amd_smu_reverse_engineering](https://github.com/bc250-collective/amd_smu_reverse_engineering),
+  [thelamer/bc250-vcn](https://github.com/thelamer/bc250-vcn),
   [Shalasere/bc250-vcn-research](https://github.com/Shalasere/bc250-vcn-research),
   [MTSistemi/bc250-vaapi](https://github.com/MTSistemi/bc250-vaapi),
   [Hexxeh/bc250-efi-core-unlock](https://github.com/Hexxeh/bc250-efi-core-unlock).
 
 ## What we hit (the wall, honestly)
 
-1. **LZMA unknown-size hang.** Our capsule recompressor (Python `lzma`,
-   `FORMAT_ALONE`) emitted header size `0xFFFFFFFFFFFFFFFF`. The board's PEI
-   decoder rejects it: first blink, then nothing — before any DXE runs.
-   Byte-proven, hardware-confirmed, fixed with 8 bytes. Full story:
-   [docs/05-lzma-lesson.md](docs/05-lzma-lesson.md).
-2. **DXE wedge ladder.** With DXE loading, the board stalls before video/LAN.
-   Suspects, in test order: driver code vs FV surgery (v006r, on chip) →
-   position (v007) → raw reads (v008) → timing (v009). Each rung changes
-   exactly one variable.
-3. **Dispatch position.** Our first slot was the FIRST TRUE-pool driver —
-   ahead of PCI, video, LAN, and all AMD chipset DXE. Mapped file-by-file:
-   [docs/02-uefi-layout.md](docs/02-uefi-layout.md).
+- **LZMA unknown-size hang.** Our capsule recompressor (Python `lzma`,
+  `FORMAT_ALONE`) wrote header size `0xFFFFFFFFFFFFFFFF`. The board's PEI
+  decoder rejects unknown size, so the DXE volume never loads. Symptom: first
+  blink, then nothing, before any driver runs. Fixed with 8 bytes in v005;
+  full story: [docs/05-lzma-lesson.md](docs/05-lzma-lesson.md).
+- **DXE wedge ladder.** With DXE loading, the board stalls before video and
+  LAN. Suspects in test order: driver code vs FV surgery, then position, then
+  raw reads, then timing. Each rung changes exactly one variable.
+- **Dispatch position.** Our first slot was the FIRST TRUE-pool driver, ahead
+  of PCI, video, LAN, and all AMD chipset DXE. `DEPEX TRUE` changes nothing
+  vs no DEPEX (PI spec); the identical v003e/v004 hangs proved it. Map:
+  [docs/02-uefi-layout.md](docs/02-uefi-layout.md).
 
 ## Layout
 
-- `tools/` — reproducible builders, the 10-gate preflight, the OVMF driver
-  harness, the post-flash VCN check. Start here: [tools/README.md](tools/README.md).
-- `src/Bc250VcnUnlockDxe/` — the DXE driver sources (route-B, secure,
-  ReadyToBoot) + EDK2 build recipe.
-- `docs/` — flash protocol, UEFI layout, driver write set, VCN check method,
-  LZMA lesson.
+- `tools/` holds reproducible builders, the 10-gate preflight, the OVMF driver
+  harness, and the post-flash VCN check. Start here:
+  [tools/README.md](tools/README.md).
+- `src/Bc250VcnUnlockDxe/` holds the DXE driver sources (route-B, secure,
+  ReadyToBoot) plus the EDK2 build recipe.
+- `docs/` holds the flash protocol, the UEFI layout, the driver write set, the
+  VCN check method, and the LZMA lesson.
 
 ## We need help with
 
-Open an issue if you can move any of these:
-
-1. **The DXE wedge.** v005 stalls before video/LAN. Write-set vs ownership
-   analysis is in `docs/03-route-b-driver.md`. A second pair of eyes on the
-   SMU-concurrency mechanism (or a UART mod to get POST codes!) unblocks us.
-2. **Linux-side VCN.** When a rung boots, `tools/postflash_vcn_check.py`
-   judges the hardware — review the 16 markers and the amdgpu/VCN bind path.
-3. **Hardware testers.** BC-250 + SPI programmer owners willing to flash
-   staged rungs with readback — the ladder is designed for exactly that.
-4. **History.** We have 60+ older images (D-series, OC, APCB) with thin
-   manifests — help mapping orphan → script → verdict.
-
-Contact: GitHub issues on this repo. PRs welcome (scripts and docs; no full
-dumps in PRs — see `.gitignore`).
+- **The DXE wedge.** v005 stalls before video and LAN. The write-set vs
+  ownership analysis is in `docs/03-route-b-driver.md`. A second pair of eyes
+  on the SMU-concurrency mechanism (or a UART mod for POST codes) unblocks us.
+- **Linux-side VCN.** When a rung boots, `tools/postflash_vcn_check.py` judges
+  the hardware. Review the 16 markers and the amdgpu/VCN bind path.
+- **Hardware testers.** BC-250 plus SPI programmer owners who flash staged
+  rungs with readback. The ladder is designed for exactly that.
+- **History.** We hold 60+ older images (D-series, OC, APCB) with thin
+  manifests. Help maps orphan to script to verdict.
+- Contact: GitHub issues on this repo. PRs take scripts and docs; full dumps
+  are rejected by `.gitignore`.
 
 ## License and disclaimer
 
-MIT (code and docs). The 16 MiB images additionally contain vendor firmware
-(AMI/AGESA/PSP blobs) from the board they were built on — treat them as
-research artifacts for hardware you own, with no warranty. Flashing can brick
-your board; the recovery path in [docs/01-flash-protocol.md](docs/01-flash-protocol.md)
-is mandatory, not optional.
+- Code and docs are MIT.
+- The 16 MiB images also contain vendor firmware (AMI/AGESA/PSP blobs) from
+  their donor board. Treat them as research artifacts for hardware you own,
+  with no warranty.
+- Flashing can brick your board, so the recovery path in
+  [docs/01-flash-protocol.md](docs/01-flash-protocol.md) is mandatory, not optional.
