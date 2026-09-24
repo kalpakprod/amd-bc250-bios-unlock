@@ -11,8 +11,7 @@ chip now; its cold-boot verdict decides the next flash. See [the ladder](#the-la
 
 ## Scale of the work
 
-Active since 2026-09-02 (research corpus) / 2026-09-10 (this repo) — day 15
-of daily work and counting:
+Active since 2026-09-02 (first message) — day 23 of daily work and counting:
 
 ![project timeline](docs/assets/timeline.svg)
 
