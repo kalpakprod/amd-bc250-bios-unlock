@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="380" viewBox="0 0 1200 380" role="img" aria-labelledby="title desc">
+  <title id="title">Разблокировка BIOS AMD BC-250</title>
+  <desc id="desc">Шапка проекта: блок кодирования VCN, включённый в прошивке; панель доказательств с байтами LZMA и лестницей образов.</desc>
+  <rect width="1200" height="380" rx="26" fill="#f5f5f5"/>
+  <g font-family="-apple-system,Inter,Segoe UI,Roboto,Arial,sans-serif">
+    <text x="64" y="76" font-size="19" letter-spacing="3" fill="#eb6c36" font-weight="bold">РЕВЕРС-ИНЖИНИРИНГ ПРОШИВОК</text>
+    <text x="60" y="152" font-size="64" font-weight="800" fill="#2d3142">AMD BC-250</text>
+    <text x="60" y="216" font-size="58" font-weight="800" fill="#2d3142">Разблокировка BIOS</text>
+    <text x="64" y="262" font-size="24" fill="#2d3142">Блок кодирования VCN — в прошивке.</text>
+    <text x="64" y="310" font-size="17" fill="#2d3142" opacity="0.7" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">v1.0.0 &#183; 7 образов &#183; префлайт 10/10 &#183; MIT</text>
+  </g>
+  <g>
+    <rect x="760" y="48" width="376" height="284" rx="16" fill="#2d3142"/>
+    <text x="788" y="88" font-size="16" letter-spacing="2" fill="#f5f5f5" opacity="0.7" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">ДОКАЗАТЕЛЬСТВА</text>
+    <text x="788" y="122" font-size="19" fill="#f5f5f5" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">LZMA 5d&#8230;ffffffff</text>
+    <text x="788" y="150" font-size="19" fill="#eb6c36" font-weight="bold" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">--&gt; 5d&#8230;00441010</text>
+    <line x1="788" y1="172" x2="1108" y2="172" stroke="#f5f5f5" opacity="0.25" stroke-width="1"/>
+    <g font-size="18" font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace">
+      <text x="788" y="202" fill="#7ee787">v005 2fadb173</text>
+      <text x="788" y="230" fill="#f5f5f5">v006r 6500bea5</text>
+      <text x="788" y="258" fill="#f5f5f5" opacity="0.7">v007+ staged</text>
+    </g>
+    <g font-size="15" font-family="-apple-system,Inter,Segoe UI,Roboto,Arial,sans-serif" font-weight="bold">
+      <text x="788" y="296" fill="#7ee787">DXE ГРУЗИТСЯ</text>
+      <text x="920" y="296" fill="#eb6c36">НА ЧИПЕ</text>
+    </g>
+  </g>
+</svg>

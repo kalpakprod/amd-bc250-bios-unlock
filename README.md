@@ -1,8 +1,14 @@
 **English** | [Русский](README.ru.md)
 
-# AMD BC-250 BIOS unlock
+<p align="center">
+  <img src="docs/assets/hero.svg" width="100%" alt="AMD BC-250 BIOS unlock: the VCN encode block, enabled in firmware. Proof panel: LZMA header fixed from unknown size to explicit, ladder v005 DXE boots, v006r on chip.">
+</p>
 
-[![release](https://img.shields.io/github/v/release/kalpakprod/amd-bc250-bios-unlock)](https://github.com/kalpakprod/amd-bc250-bios-unlock/releases) [![license](https://img.shields.io/github/license/kalpakprod/amd-bc250-bios-unlock)](LICENSE) [![board](https://img.shields.io/badge/board-ASRock_BC--250-blue)](https://github.com/kalpakprod/amd-bc250-bios-unlock)
+<p align="center">
+  <a href="https://github.com/kalpakprod/amd-bc250-bios-unlock/releases"><img src="https://img.shields.io/github/v/release/kalpakprod/amd-bc250-bios-unlock" alt="release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/kalpakprod/amd-bc250-bios-unlock" alt="license"></a>
+  <a href="https://github.com/kalpakprod/amd-bc250-bios-unlock"><img src="https://img.shields.io/badge/board-ASRock_BC--250-blue" alt="board"></a>
+</p>
 
 Hacking the ASRock BC-250 BIOS toward one goal: **the VCN encode block
 enabled in firmware**. UEFI/DXE patches, a from-scratch DXE driver,
@@ -11,7 +17,45 @@ flash protocol — all verified on real hardware with a programmer.
 
 Status as of 2026-09-24: the LZMA root cause is fixed and hardware-confirmed,
 the DXE wedge is being bisected down a 5-rung ladder. `v006r-noop` is on the
-chip now; its cold-boot verdict decides the next flash. See [the ladder](#the-ladder).
+chip now; its cold-boot verdict decides the next flash.
+
+> **Brick warning.** Every image here is experimental. Flashing needs a
+> hardware programmer (CH341/CH347 + SOIC clip), a full verified dump of YOUR
+> chip, and a tested recovery path. No recovery path, no flash. Details:
+> [docs/01-flash-protocol.md](docs/01-flash-protocol.md).
+
+## The ladder
+
+| image | sha256 (short) | what | verdict |
+|---|---|---|---|
+| v004 | `98b9c2bd…` | route-B driver, LZMA bug | flashed, 1 blink (specimen) |
+| v005 | `2fadb173…` | v004 + explicit LZMA size | flashed, 2 blinks, no LAN/video |
+| v006r-noop | `6500bea5…` | v005 + stubbed entry (control) | **on chip, verdict pending** |
+| v007-active | `9d249397…` | same driver, appended at FV end | staged |
+| v007r-noop | `0133a34b…` | noop, appended | staged (if v006r hangs) |
+| v008-secure | `c935e3ec…` | secure-reads-only driver | staged (if v007 hangs) |
+| v009-rtb | `56df6244…` | ReadyToBoot-deferred sequence | staged (if v007+v008 hang) |
+
+Images live in [Releases](https://github.com/kalpakprod/amd-bc250-bios-unlock/releases)
+as attachments (never in git). Every image: full 16 MiB, built from one
+verified dump, published with its `.build.json` manifest and SHA256SUMS.
+
+## Reproduce in 5 minutes (no hardware)
+
+```sh
+# 1. Grab v1.0.0 attachments (v004 image at least)
+# 2. Rebuild v005 and v006r byte-identically:
+PYTHONPATH=tools python3 tools/build_v005_lzma_explicit.py
+# -> 2fadb173251eb4a44aa9da371f37207efb0f276f8d509926083bfa5a64c03406
+PYTHONPATH=tools python3 tools/build_v006_noop.py
+# -> 6500bea5b01ea1dcc540939d65faa9cc0ec0f2505a5fcb3e358622803b85bb27
+# 3. Watch v004 FAIL the preflight's LZMA gate and v005 pass it:
+python3 tools/verify_candidate_preflight.py --help
+```
+
+With your own 16 MiB dump (`BC250_BASE`, `BC250_PRE_SHA`), the append
+builders (v007–v009) run against YOUR base. Never flash anyone's dump —
+NVRAM and board data differ.
 
 ## Scale of the work
 
@@ -25,11 +69,6 @@ Active since 2026-09-02 (first message) — day 23 of daily work and counting:
   400+ dated lab-log entries.
 - Full chain per image: static preflight → OVMF contract run → flash →
   readback → cold-boot verdict. Nothing is called done without evidence.
-
-> **Brick warning.** Every image here is experimental. Flashing needs a
-> hardware programmer (CH341/CH347 + SOIC clip), a full verified dump of YOUR
-> chip, and a tested recovery path. No recovery path, no flash. Details:
-> [docs/01-flash-protocol.md](docs/01-flash-protocol.md).
 
 ## Where the ideas came from
 
@@ -57,27 +96,11 @@ Active since 2026-09-02 (first message) — day 23 of daily work and counting:
    [docs/05-lzma-lesson.md](docs/05-lzma-lesson.md).
 2. **DXE wedge ladder.** With DXE loading, the board stalls before video/LAN.
    Suspects, in test order: driver code vs FV surgery (v006r, on chip) →
-   dispatch position (v007) → raw reads (v008) → dispatch timing (v009).
-   Each rung changes exactly one variable.
+   position (v007) → raw reads (v008) → timing (v009). Each rung changes
+   exactly one variable.
 3. **Dispatch position.** Our first slot was the FIRST TRUE-pool driver —
-   ahead of PCI, GOP, LAN, and all AMD chipset DXE. Mapped file-by-file:
+   ahead of PCI, video, LAN, and all AMD chipset DXE. Mapped file-by-file:
    [docs/02-uefi-layout.md](docs/02-uefi-layout.md).
-
-## The ladder
-
-| image | sha256 (short) | what | verdict |
-|---|---|---|---|
-| v004 | `98b9c2bd` | route-B driver, LZMA bug | flashed, 1 blink (specimen) |
-| v005 | `2fadb173` | v004 + explicit LZMA size | flashed, 2 blinks, no LAN/video |
-| v006r-noop | `6500bea5` | v005 + stubbed entry (control) | **on chip, verdict pending** |
-| v007-active | `9d249397` | same driver, appended at FV end | staged |
-| v007r-noop | `0133a34b` | noop, appended | staged (if v006r hangs) |
-| v008-secure | `c935e3ec` | secure-reads-only driver | staged (if v007 hangs) |
-| v009-rtb | `56df6244` | ReadyToBoot-deferred sequence | staged (if v007+v008 hang) |
-
-Images live in [Releases](https://github.com/kalpakprod/amd-bc250-bios-unlock/releases)
-as attachments (never in git). Every image: full 16 MiB, built from one
-verified dump, published with its `.build.json` manifest and SHA256SUMS.
 
 ## Layout
 
@@ -87,23 +110,6 @@ verified dump, published with its `.build.json` manifest and SHA256SUMS.
   ReadyToBoot) + EDK2 build recipe.
 - `docs/` — flash protocol, UEFI layout, driver write set, VCN check method,
   LZMA lesson.
-
-## Reproduce in 5 minutes (no hardware)
-
-```sh
-# 1. Grab v1.0.0 attachments (v004 image at least)
-# 2. Rebuild v005 and v006r byte-identically:
-PYTHONPATH=tools python3 tools/build_v005_lzma_explicit.py
-# -> 2fadb173251eb4a44aa9da371f37207efb0f276f8d509926083bfa5a64c03406
-PYTHONPATH=tools python3 tools/build_v006_noop.py
-# -> 6500bea5b01ea1dcc540939d65faa9cc0ec0f2505a5fcb3e358622803b85bb27
-# 3. Watch v004 FAIL the preflight's LZMA gate and v005 pass it:
-python3 tools/verify_candidate_preflight.py --help
-```
-
-With your own 16 MiB dump (`BC250_BASE`, `BC250_PRE_SHA`), the append
-builders (v007–v009) run against YOUR base. Never flash anyone's dump —
-NVRAM and board data differ.
 
 ## We need help with
 
