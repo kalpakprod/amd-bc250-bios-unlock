@@ -145,6 +145,7 @@ python3 tools/verify_candidate_preflight.py --help
   ReadyToBoot) плюс рецепт сборки EDK2.
 - `docs/` — протокол прошивки, раскладка UEFI, набор записей драйвера, метод
   проверки VCN и урок LZMA.
+- `CHANGELOG.md` — все релизы и правила версионирования.
 
 ## Чем нам помочь
 

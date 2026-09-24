@@ -144,6 +144,7 @@ python3 tools/verify_candidate_preflight.py --help
   ReadyToBoot) plus the EDK2 build recipe.
 - `docs/` holds the flash protocol, the UEFI layout, the driver write set, the
   VCN check method, and the LZMA lesson.
+- `CHANGELOG.md` holds every release and the versioning rules.
 
 ## We need help with
 
