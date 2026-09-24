@@ -1,0 +1,36 @@
+# AMD BC-250 VCN pre-OS enablement DXE driver.
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = Bc250VcnUnlockDxe
+  FILE_GUID                      = b6250780-7e00-4203-900c-23443b1413fe
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = Bc250VcnUnlockDxeEntryPoint
+
+[Sources]
+  Bc250VcnUnlockDxe.c
+  Bc250VcnUnlockDxe.h
+
+[Packages]
+  MdePkg/MdePkg.dec
+  Bc250VcnUnlockPkg/Bc250VcnUnlockPkg.dec
+
+[LibraryClasses]
+  UefiDriverEntryPoint
+  UefiBootServicesTableLib
+  UefiRuntimeServicesTableLib
+  UefiLib
+  BaseLib
+  BaseMemoryLib
+  MemoryAllocationLib
+  PciSegmentLib
+  IoLib
+  PrintLib
+  DebugLib
+
+[Protocols]
+  gBc250VcnUnlockProtocolGuid               ## PRODUCES
+
+[Depex]
+  TRUE

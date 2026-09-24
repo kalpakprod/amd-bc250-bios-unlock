@@ -1,0 +1,8 @@
+# Images travel as release attachments, never in git.
+*.bin
+*.rom
+*.ffs
+*.efi
+*.sec
+__pycache__/
+*.pyc
